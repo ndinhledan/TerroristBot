@@ -62,16 +62,22 @@ async def on_message(message):
 
         m = message.content
         
+        # Hello world
+
         if m.startswith(settings["prefix"] + "hello"):
             msg = "How dare you say hello to me. I am your general. Show some respect. {0.author.mention} do 50 push ups for me".format(message)
             await client.send_message(message.channel, msg)
-            
+
+        # EMBEDDED CONTENT (for testing)
+
         if m.startswith(settings["prefix"] + "em"):
             em = discord.Embed(title='Title', description='My Embed Content.', colour=0xDEADBF)
             em.add_field(name ='Yes', value='Haha', inline=False)
             em.add_field(name ='No', value='HoHo', inline=True)
             await client.send_message(message.channel, embed=em, content = "Hello you fuck")
-            
+
+        # DISPLAY MEMBER IDS in SERVER
+
         if m.startswith(settings["prefix"] + "mem"):
             for mem in message.channel.server.members:
                 if mem == client.user or mem.bot:
@@ -79,8 +85,12 @@ async def on_message(message):
                 msg = "This is {0.mention}".format(mem)
                 await client.send_message(message.channel, msg)
 
+        # DISPLAY HELP MESSAGE
+
         if m == (settings["prefix"] + "help"):
             await client.send_message(message.channel, pre_text)
+
+        # READY SCHEDULE CHECK
 
         if m == (settings["prefix"] + "ready"):
             for status in status_list:
@@ -91,6 +101,8 @@ async def on_message(message):
                     else:
                         await client.send_message(message.channel, "{0.mention} Easy now boy. No need to be so eager".format(message.author) ,embed=create_em_list_sol(status["mems"]))    
         
+        # UNREADY SCHEDULE CHECK
+
         if m == (settings["prefix"] + "unready"):
             for status in status_list:
                 if message.channel == status["channel"] and status["schedule"] == True:
@@ -101,6 +113,8 @@ async def on_message(message):
                         await client.send_message(message.channel, "{0.mention} Don't try to be a smartass.".format(message.author) ,embed=create_em_list_sol(status["mems"]))
                     break    
 
+        # PREFIX CHANGING
+
         if m.startswith(settings["prefix"] + "prefix"):
             dmsg, tmsg = m.split("prefix")
             new_prefix = tmsg.strip()
@@ -110,6 +124,8 @@ async def on_message(message):
                 return await client.send_message(message.channel, "Prefix cannot be prefix. Don't try to be a smartass")
             settings["prefix"] = new_prefix
             await client.send_message(message.channel, "Congrats. Your new prefix is **"+ settings["prefix"]+ "**. Don't forget.")
+
+        # GAME SCHEDULER
 
         if m.startswith(settings["prefix"] + "schedule"):
             msg = "You have called for your comrads to go to battle in {}. Type **" + settings["prefix"] + "ready** after you finished wearing your diapers.".format(m[len("t!schedule"):].strip())
