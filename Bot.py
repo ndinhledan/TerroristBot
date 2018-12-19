@@ -80,14 +80,21 @@ async def on_message(message):
 
         m = message.content
         
+        # Hello world
+
         if m.startswith(settings["prefix"] + "hello"):
             msg = "How dare you say hello to me. I am your general. Show some respect. {0.author.mention} do 50 push ups for me".format(message)
             await client.send_message(message.channel, msg)
+
             
         if m.startswith(settings["prefix"] + "link"):
             em = discord.Embed(title='Link to Credit Score', colour=0xDEADBF, url="https://docs.google.com/spreadsheets/d/1CNsWa3avZbJRTpsxBGGy-iKTEaQ9__WaX_Oe3UNVd1Q/edit?usp=sharing")
             await client.send_message(message.channel, embed=em)
             
+
+        # DISPLAY MEMBER IDS in SERVER
+
+
         if m.startswith(settings["prefix"] + "mem"):
             for mem in message.channel.server.members:
                 if mem == client.user or mem.bot:
@@ -95,12 +102,16 @@ async def on_message(message):
                 msg = "This is {0.mention}".format(mem)
                 await client.send_message(message.channel, msg)
 
+        # DISPLAY HELP MESSAGE
+
         if m == (settings["prefix"] + "help"):
             command_str = ""
             for command in command_list:
                 command_str += (command + "   ")
             msg = pre_text + '''**```Current commands```**```''' + command_str + "```"
             await client.send_message(message.channel, msg)
+
+        # READY SCHEDULE CHECK
 
         if m == (settings["prefix"] + "ready"):
             status = find_channel_status(message.channel)
@@ -111,6 +122,8 @@ async def on_message(message):
                 else:
                     await client.send_message(message.channel, "{0.mention} Easy now boy. No need to be so eager".format(message.author) ,embed=create_em_list_sol(status["mems"]))    
         
+        # UNREADY SCHEDULE CHECK
+
         if m == (settings["prefix"] + "unready"):
             status = find_channel_status(message,channel)
             if status["schedule"] == True:
@@ -119,6 +132,8 @@ async def on_message(message):
                     await client.send_message(message.channel, "{0.mention} decided he has enough and is gonna go grab some more laughing gas.".format(message.author) ,embed=create_em_list_sol(status["mems"]))
                 else:
                     await client.send_message(message.channel, "{0.mention} Don't try to be a smartass. You haven't readied yet".format(message.author) ,embed=create_em_list_sol(status["mems"]))
+
+        # PREFIX CHANGING
 
         if m.startswith(settings["prefix"] + "prefix"):
             dmsg, tmsg = m.split("prefix")
@@ -129,6 +144,7 @@ async def on_message(message):
                 return await client.send_message(message.channel, "Prefix cannot be prefix. Don't try to be a smartass")
             settings["prefix"] = new_prefix
             await client.send_message(message.channel, "Congrats. Your new prefix is **"+ settings["prefix"]+ "**. Don't forget.")
+
 
         if m == (settings["prefix"] + "status"):
             status = find_channel_status(message.channel)
@@ -188,6 +204,9 @@ async def on_message(message):
             except gspread.exceptions.CellNotFound:
                 await client.send_message(message.channel, "Member not found")
             
+
+        # GAME SCHEDULER
+
 
         if m.startswith(settings["prefix"] + "schedule"):
             msg = "You have called for your comrads to go to battle in {}. Type **{}ready** after you have finished wearing your diapers.".format(m[len(settings["prefix"] + "schedule"):].strip(), settings["prefix"])
