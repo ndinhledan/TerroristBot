@@ -4,6 +4,8 @@ import datetime
 import asyncio
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import json
+
 
 ''' TODO unready
 pee
@@ -18,7 +20,11 @@ creds = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', s
 client_sheet = gspread.authorize(creds)
 sheet = client_sheet.open('Credit Score').sheet1
 
-TOKEN = "NTE5ODIzMzM3MTA3NzUwOTEy.DvYYjg.oInz1LWhIH7P1MGSmK373kcutCY"
+with open("bot_info.json") as file:
+    bot_data = json.load(file)
+
+
+TOKEN = bot_data["token"]
 
 client = discord.Client()
 
@@ -169,7 +175,7 @@ async def on_message(message):
         if m == (settings["prefix"] + "reset_credit"):
             count = 2
             for mem in message.channel.server.members:
-                if mem == client.user:
+                if mem == client.user or mem.bot:
                     continue
                 sheet.update_cell(count, 1, mem.name)
                 sheet.update_cell(count, 3, '1000')
@@ -186,7 +192,7 @@ async def on_message(message):
             try:
                 cell = sheet.find(addee)
                 sheet.update_cell(cell.row, 3, str(int(sheet.cell(cell.row, 3).value) + int(amount)))
-                await client.send_message(message.channel, addee + " has been awarded " + amount + " points by the ultimate leader " + message.author.name + "for exceptional bravery")
+                await client.send_message(message.channel, addee + " has been awarded " + amount + " points by the ultimate leader " + message.author.name + " for exceptional bravery")
             except gspread.exceptions.CellNotFound:
                 await client.send_message(message.channel, "Member not found")
             
@@ -200,7 +206,7 @@ async def on_message(message):
             try:
                 cell = sheet.find(addee)
                 sheet.update_cell(cell.row, 3, str(int(sheet.cell(cell.row, 3).value) - int(amount)))
-                await client.send_message(message.channel, addee + " has been punished for " + amount + " points by the ultimate leader " + message.author.name + "for being a pussy")
+                await client.send_message(message.channel, addee + " has been punished for " + amount + " points by the ultimate leader " + message.author.name + " for being a pussy")
             except gspread.exceptions.CellNotFound:
                 await client.send_message(message.channel, "Member not found")
             
