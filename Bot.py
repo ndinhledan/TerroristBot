@@ -2,8 +2,8 @@ import discord
 import time
 import datetime
 import asyncio
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+import gspread # Install by ' python3.6 -m pip install gspread '
+from oauth2client.service_account import ServiceAccountCredentials # Install by ' python3.6 -m pip install oauth2client '
 import json
 
 
@@ -86,6 +86,10 @@ async def on_message(message):
 
         m = message.content
         
+        ######################################
+        ##### General User interactions ######
+        ######################################
+
         # Hello world
 
         if m.startswith(settings["prefix"] + "hello"):
@@ -97,9 +101,19 @@ async def on_message(message):
             em = discord.Embed(title='Link to Credit Score', colour=0xDEADBF, url="https://docs.google.com/spreadsheets/d/1CNsWa3avZbJRTpsxBGGy-iKTEaQ9__WaX_Oe3UNVd1Q/edit?usp=sharing")
             await client.send_message(message.channel, embed=em)
             
+        # PREFIX CHANGING
+
+        if m.startswith(settings["prefix"] + "prefix"):
+            dmsg, tmsg = m.split("prefix")
+            new_prefix = tmsg.strip()
+            if not new_prefix:
+                return await client.send_message(message.channel, "Your prefix is currently **" + settings["prefix"]+ "**")
+            if new_prefix == "prefix":
+                return await client.send_message(message.channel, "Prefix cannot be prefix. Don't try to be a smartass")
+            settings["prefix"] = new_prefix
+            await client.send_message(message.channel, "Congrats. Your new prefix is **"+ settings["prefix"]+ "**. Don't forget.")
 
         # DISPLAY MEMBER IDS in SERVER
-
 
         if m.startswith(settings["prefix"] + "mem"):
             for mem in message.channel.server.members:
@@ -139,80 +153,7 @@ async def on_message(message):
                 else:
                     await client.send_message(message.channel, "{0.mention} Don't try to be a smartass. You haven't readied yet".format(message.author) ,embed=create_em_list_sol(status["mems"]))
 
-        # PREFIX CHANGING
-
-        if m.startswith(settings["prefix"] + "prefix"):
-            dmsg, tmsg = m.split("prefix")
-            new_prefix = tmsg.strip()
-            if not new_prefix:
-                return await client.send_message(message.channel, "Your prefix is currently **" + settings["prefix"]+ "**")
-            if new_prefix == "prefix":
-                return await client.send_message(message.channel, "Prefix cannot be prefix. Don't try to be a smartass")
-            settings["prefix"] = new_prefix
-            await client.send_message(message.channel, "Congrats. Your new prefix is **"+ settings["prefix"]+ "**. Don't forget.")
-
-
-        if m == (settings["prefix"] + "status"):
-            status = find_channel_status(message.channel)
-            if status["schedule"] == True:
-                time_remaining = status["time"] - int(time.time()) 
-                res = [0,0,0] #hour, minute, second
-                res[0] = time_remaining // 3600
-                res[1] = (time_remaining - res[0]*3600)//60
-                res[2] = (time_remaining - res[0]*3600 - res[1]*60)
-                await client.send_message(message.channel, "Battle will commence in about {} hours {} minutes {} seconds".format(res[0], res[1], res[2]), embed=create_em_list_sol(status["mems"]))
-            else:
-                await client.send_message(message.channel,"There is currently no scheduled battle. So booooooooring!")
-
-        if m == (settings["prefix"] + "cancel"):
-            status = find_channel_status(message.channel)
-            if status["schedule"] == True :
-                status["schedule"] = False
-                await client.send_message(message.channel, "You have canceled your scheduled battle! What a pussy.")
-            else :
-                await client.send_message(message.channel, "Huh?")
-
-        if m == (settings["prefix"] + "reset_credit"):
-            count = 2
-            for mem in message.channel.server.members:
-                if mem == client.user or mem.bot:
-                    continue
-                sheet.update_cell(count, 1, mem.name)
-                sheet.update_cell(count, 3, '1000')
-                print(mem.name)
-                count +=1
-
-        if m.startswith(settings["prefix"] + "add_credit"):
-            dmsg = m[len(settings["prefix"] + "add_credit"):].strip()
-            splits = dmsg.split(" ")
-            if not splits or len(splits) < 2:
-                return await send_help_text(client, message.channel, "add_credit")
-            addee = splits[0]
-            amount = splits[1]
-            try:
-                cell = sheet.find(addee)
-                sheet.update_cell(cell.row, 3, str(int(sheet.cell(cell.row, 3).value) + int(amount)))
-                await client.send_message(message.channel, addee + " has been awarded " + amount + " points by the ultimate leader " + message.author.name + " for exceptional bravery")
-            except gspread.exceptions.CellNotFound:
-                await client.send_message(message.channel, "Member not found")
-            
-        if m.startswith(settings["prefix"] + "minus_credit"):
-            dmsg = m[len(settings["prefix"] + "minus_credit"):].strip()
-            splits = dmsg.split(" ")
-            if not splits or len(splits) < 2:
-                return await send_help_text(client, message.channel, "minus_credit")
-            addee = splits[0]
-            amount = splits[1]
-            try:
-                cell = sheet.find(addee)
-                sheet.update_cell(cell.row, 3, str(int(sheet.cell(cell.row, 3).value) - int(amount)))
-                await client.send_message(message.channel, addee + " has been punished for " + amount + " points by the ultimate leader " + message.author.name + " for being a pussy")
-            except gspread.exceptions.CellNotFound:
-                await client.send_message(message.channel, "Member not found")
-            
-
         # GAME SCHEDULER
-
 
         if m.startswith(settings["prefix"] + "schedule"):
             msg = "You have called for your comrads to go to battle in {}. Type **{}ready** after you have finished wearing your diapers.".format(m[len(settings["prefix"] + "schedule"):].strip(), settings["prefix"])
@@ -250,6 +191,79 @@ async def on_message(message):
                 return await send_help_text(client, message.channel, "schedule")
 
             print(res)
+        
+        # Battle commence reminder
+
+        if m == (settings["prefix"] + "status"):
+            status = find_channel_status(message.channel)
+            if status["schedule"] == True:
+                time_remaining = status["time"] - int(time.time()) 
+                res = [0,0,0] #hour, minute, second
+                res[0] = time_remaining // 3600
+                res[1] = (time_remaining - res[0]*3600)//60
+                res[2] = (time_remaining - res[0]*3600 - res[1]*60)
+                await client.send_message(message.channel, "Battle will commence in about {} hours {} minutes {} seconds".format(res[0], res[1], res[2]), embed=create_em_list_sol(status["mems"]))
+            else:
+                await client.send_message(message.channel,"There is currently no scheduled battle. So booooooooring!")
+
+        # Cancel battle commencement
+
+        if m == (settings["prefix"] + "cancel"):
+            status = find_channel_status(message.channel)
+            if status["schedule"] == True :
+                status["schedule"] = False
+                await client.send_message(message.channel, "You have canceled your scheduled battle! What a pussy.")
+            else :
+                await client.send_message(message.channel, "Huh?")
+
+        ########################################
+        ########## CREDIT RELATED ##############
+        ########################################
+
+        #  Reset credit
+
+        if m == (settings["prefix"] + "reset_credit"):
+            count = 2
+            for mem in message.channel.server.members:
+                if mem == client.user or mem.bot:
+                    continue
+                sheet.update_cell(count, 1, mem.name)
+                sheet.update_cell(count, 3, '1000')
+                print(mem.name)
+                count +=1
+
+        # Add credt
+
+        if m.startswith(settings["prefix"] + "add_credit"):
+            dmsg = m[len(settings["prefix"] + "add_credit"):].strip()
+            splits = dmsg.split(" ")
+            if not splits or len(splits) < 2:
+                return await send_help_text(client, message.channel, "add_credit")
+            addee = splits[0]
+            amount = splits[1]
+            try:
+                cell = sheet.find(addee)
+                sheet.update_cell(cell.row, 3, str(int(sheet.cell(cell.row, 3).value) + int(amount)))
+                await client.send_message(message.channel, addee + " has been awarded " + amount + " points by the ultimate leader " + message.author.name + " for exceptional bravery")
+            except gspread.exceptions.CellNotFound:
+                await client.send_message(message.channel, "Member not found")
+
+        # Subtract Credits            
+
+        if m.startswith(settings["prefix"] + "minus_credit"):
+            dmsg = m[len(settings["prefix"] + "minus_credit"):].strip()
+            splits = dmsg.split(" ")
+            if not splits or len(splits) < 2:
+                return await send_help_text(client, message.channel, "minus_credit")
+            addee = splits[0]
+            amount = splits[1]
+            try:
+                cell = sheet.find(addee)
+                sheet.update_cell(cell.row, 3, str(int(sheet.cell(cell.row, 3).value) - int(amount)))
+                await client.send_message(message.channel, addee + " has been punished for " + amount + " points by the ultimate leader " + message.author.name + " for being a pussy")
+            except gspread.exceptions.CellNotFound:
+                await client.send_message(message.channel, "Member not found")
+            
 
             status = {}
             
