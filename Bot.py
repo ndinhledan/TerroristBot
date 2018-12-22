@@ -33,7 +33,7 @@ settings = {
 	"prefix": "t!"
 }
 
-units = ["hours", "minutes"]
+units = ["hours", "minutes", "seconds"]
 units.extend([t[:-1] for t in units])
 
 status_list = [
@@ -73,17 +73,18 @@ My current prefix is ''' + settings["prefix"] + '''
 To change prefix use **<prefix>prefix <new prefix>**
 
 '''
-rule_text = ''' Each person will start with 1000 credit points.
+rule_text = ''' 
+Each person starts with 1000 credit points.
 Every time a battle is scheduled, you will have as late as 10 minutes to ready up.
+
 If you ready up early, 15 points will be awarded to your credit score, up to maximum of 1000.
 If you ready up within 10 minutes late, you will receive no deduction
 
 However,
-	20 minutes late, 5 points will be deducted
-	30 minutes late, 10 points will be deducted
-	1 hour late, 15 points will be deducted
-	After 2 hours, 20 points will be deducted
-
+	-20 minutes late, 5 points will be deducted
+	-30 minutes late, 10 points will be deducted
+	-1 hour late, 15 points will be deducted
+	-After 2 hours, 20 points will be deducted
 '''
 
 @client.event
@@ -161,7 +162,7 @@ async def on_message(message):
 				if status["mems"][message.author] == False:
 					status["mems"][message.author] = True
 					await client.send_message(message.channel, "{0.mention} has finally figured out the way home.".format(message.author) ,embed=create_em_list_sol(status["mems"]))
-					remaining_time = ready_time - status["time"] 
+					remaining_time = ready_time - status["time"]
 					if (remaining_time // 60) < 11: #10 minutes
 						return await client.send_message(message.channel, "Luckily {0.mention} arrived within 10 minutes so no points deducted".format(message.author))                 
 					else:
@@ -181,7 +182,7 @@ async def on_message(message):
 						res[0] = remaining_time // 3600
 						res[1] = (remaining_time - 3600*res[0]) // 60
 						res[2] = remaining_time - 3600*res[0] - 60*res[1]
-						return await client.send_message(message.channel, "{0} has been deducted from {1.mention} for being {2} hours {3} minutes {4} seconds late".format(deduction, message.author, res[0], res[1], res[2]))
+						return await client.send_message(message.channel, "{0} points has been deducted from {1.mention} for being {2} hours {3} minutes {4} seconds late".format(deduction, message.author, res[0], res[1], res[2]))
 				else:
 					return await client.send_message(message.channel, "No battle scheduled yet")
 					   
@@ -306,7 +307,7 @@ async def on_message(message):
 			if not splits or len(splits) < 2:
 				return await send_help_text(client, message.channel, "schedule")
 
-			res =[0,0]
+			res =[0,0,0] #hours, minutes, seconds
 			while len(splits) !=0:
 				num = splits.pop(0)
 				if not num.isnumeric():
@@ -340,7 +341,7 @@ async def on_message(message):
 
 
 def create_offset(time_arr):
-	offset = 3600*time_arr[0] + 60*time_arr[1]
+	offset = 3600*time_arr[0] + 60*time_arr[1] + time_arr[2]
 	return int(time.time() + offset)
 
 def create_em_list_sol(mems):
