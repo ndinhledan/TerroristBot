@@ -8,12 +8,9 @@ import json
 
 
 ''' TODO 
-unready done
+make every function asynchronous so that there is no delay
 pee 
-credit score
-time remaining done
-current status done
-mention done
+
 '''
 
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -247,6 +244,8 @@ async def on_message(message):
 			ws = get_worksheet(sheet, message.channel.server.name, client, message.channel.server.members)
 		
 			reset_credit(client, ws, message.channel.server.members)
+
+			await client.send_message(message.channel, "Everyone's credit has been reset back to 1000")
 
 		if m.startswith(settings["prefix"] + "add_credit"):
 			dmsg = m[len(settings["prefix"] + "add_credit"):].strip()
