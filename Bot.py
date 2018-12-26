@@ -19,7 +19,7 @@ mention done
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', scope)
 client_sheet = gspread.authorize(creds)
-sheet = client_sheet.open('Credit Score').sheet1
+sheet = client_sheet.open('Credit Score')
 
 with open("bot_info.json") as file:
 	bot_data = json.load(file)
@@ -42,7 +42,7 @@ status_list = [
 
 
 command_list = [
-	"hello", "link", "mem", "prefix", "rules","schedule", "ready", "unready", "cancel", "reset_credit", "add_credit", "minus_credit"
+	"hello", "link", "mem", "prefix", "rules","schedule", "ready", "unready", "cancel", "status", "reset_credit", "add_credit", "minus_credit"
 ]
 
 help_text = {
@@ -99,6 +99,9 @@ async def on_message(message):
 	else:
 
 		m = message.content
+
+		if m == (settings["prefix"] + "test"):
+			await client.send_message(message.channel, message.channel.server.name)
 		
 		# Hello world
 
@@ -140,8 +143,9 @@ async def on_message(message):
 			status = find_channel_status(message.channel)
 			ready_time = int(time.time())
 
-			cell = sheet.find(message.author.name)
-			score = int(sheet.cell(cell.row, 3).value)
+			ws = get_worksheet(sheet, message.channel.server.name, client, message.channel.server.members)
+			cell = ws.find(message.author.name)
+			score = int(ws.cell(cell.row, 3).value)
 				
 			if status["schedule"] == True: #ready early    
 				if status["mems"][message.author] == False:
@@ -151,9 +155,9 @@ async def on_message(message):
 						return await client.send_message(message.channel, "{0.mention} is on perfect score so no points awarded, only a C4!".format(message.author))
 					else:
 						if score + 15 > 1000:
-							sheet.update_cell(cell.row, 3, "1000")
+							ws.update_cell(cell.row, 3, "1000")
 						else:    
-							sheet.update_cell(cell.row, 3, str(score + 15))
+							ws.update_cell(cell.row, 3, str(score + 15))
 						return await client.send_message(message.channel, "15 points have been awarded for {0.mention} for arriving early, or just because I want to".format(message.author))
 					
 				else:
@@ -177,7 +181,7 @@ async def on_message(message):
 							deduction = 20
 						else:
 							deduction = 30
-						sheet.update_cell(cell.row, 3, str(score - deduction))
+						ws.update_cell(cell.row, 3, str(score - deduction))
 						res = [0,0,0] #hours minutes seconds
 						res[0] = remaining_time // 3600
 						res[1] = (remaining_time - 3600*res[0]) // 60
@@ -190,7 +194,7 @@ async def on_message(message):
 		# UNREADY SCHEDULE CHECK
 
 		if m == (settings["prefix"] + "unready"):
-			status = find_channel_status(message,channel)
+			status = find_channel_status(message.channel)
 			if status["schedule"] == True:
 				if status["mems"][message.author] == True:
 					status["mems"][message.author] = False
@@ -240,14 +244,9 @@ async def on_message(message):
 			await client.send_message(message.channel, "Who are you talking to bro?")
 
 		if m == (settings["prefix"] + "reset_credit"):
-			count = 2
-			for mem in message.channel.server.members:
-				if mem == client.user or mem.bot:
-					continue
-				sheet.update_cell(count, 1, mem.name)
-				sheet.update_cell(count, 3, '1000')
-				print(mem.name)
-				count +=1
+			ws = get_worksheet(sheet, message.channel.server.name, client, message.channel.server.members)
+		
+			reset_credit(client, ws, message.channel.server.members)
 
 		if m.startswith(settings["prefix"] + "add_credit"):
 			dmsg = m[len(settings["prefix"] + "add_credit"):].strip()
@@ -256,9 +255,10 @@ async def on_message(message):
 				return await send_help_text(client, message.channel, "add_credit")
 			addee = splits[0]
 			amount = splits[1]
+			ws = get_worksheet(sheet, message.channel.server.name, client, message.channel.server.members)
 			try:
-				cell = sheet.find(addee)
-				sheet.update_cell(cell.row, 3, str(int(sheet.cell(cell.row, 3).value) + int(amount)))
+				cell = ws.find(addee)
+				ws.update_cell(cell.row, 3, str(int(ws.cell(cell.row, 3).value) + int(amount)))
 				await client.send_message(message.channel, addee + " has been awarded " + amount + " points by the ultimate leader " + message.author.name + " for exceptional bravery")
 			except gspread.exceptions.CellNotFound:
 				await client.send_message(message.channel, "Member not found")
@@ -270,9 +270,10 @@ async def on_message(message):
 				return await send_help_text(client, message.channel, "minus_credit")
 			addee = splits[0]
 			amount = splits[1]
+			ws = get_worksheet(sheet, message.channel.server.name, client, message.channel.server.members)
 			try:
-				cell = sheet.find(addee)
-				sheet.update_cell(cell.row, 3, str(int(sheet.cell(cell.row, 3).value) - int(amount)))
+				cell = ws.find(addee)
+				ws.update_cell(cell.row, 3, str(int(ws.cell(cell.row, 3).value) - int(amount)))
 				await client.send_message(message.channel, addee + " has been punished for " + amount + " points by the ultimate leader " + message.author.name + " for being a pussy")
 			except gspread.exceptions.CellNotFound:
 				await client.send_message(message.channel, "Member not found")
@@ -365,6 +366,26 @@ def find_channel_status(channel):
 		if status["channel"] == channel:
 			return status
 	return None
+
+def reset_credit(client, worksheet, mems):
+	count = 2
+	worksheet.update_cell(1, 1, 'Name')
+	worksheet.update_cell(1, 3, 'Score')
+	for mem in mems:
+		if mem == client.user or mem.bot:
+			continue
+		worksheet.update_cell(count, 1, mem.name)
+		worksheet.update_cell(count, 3, '1000')
+		print(mem.name)
+		count +=1
+
+def get_worksheet(sheet, name, client, mems):
+	try:
+		ws = sheet.worksheet(name)
+	except gspread.exceptions.WorksheetNotFound:
+		ws = sheet.add_worksheet(title=name, rows=100, cols=20)
+		reset_credit(client, ws, mems)
+	return ws
 
 async def check_reminders(client):
 	await client.wait_until_ready()
