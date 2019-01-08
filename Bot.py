@@ -53,9 +53,9 @@ I can't believe you are this dumb, how can you be in nova land
 	Example: **<prefix>prefix duh!
 	Use it wisely, I'm old, I'm not used to changes.
 	''',
-	"add_credit": "**" + settings["prefix"] + '''add_credit <person> <amount>**
+	"add_credit": "**" + settings["prefix"] + '''add_credit <person> <amount> <reason>**
 Example: **''' + settings["prefix"] + '''add_credit TerroristBot 100**''',
-	"minus_credit": "**" + settings["prefix"] + '''minus_credit <person> <amount>**
+	"minus_credit": "**" + settings["prefix"] + '''minus_credit <person> <amount> <reason>**
 Example: **''' + settings["prefix"] + '''minus_credit TerroristBot 100**''',
 
 
@@ -137,11 +137,13 @@ async def on_message(message):
 		# READY SCHEDULE CHECK
 
 		if m == (settings["prefix"] + "ready"):
+			client_sheet.login()
 			status = find_channel_status(message.channel)
 			ready_time = int(time.time())
 
 			ws = get_worksheet(sheet, message.channel.server.name, client, message.channel.server.members)
 			cell = ws.find(message.author.name)
+			
 			score = int(ws.cell(cell.row, 3).value)
 				
 			if status["schedule"] == True: #ready early    
@@ -191,6 +193,7 @@ async def on_message(message):
 		# UNREADY SCHEDULE CHECK
 
 		if m == (settings["prefix"] + "unready"):
+			client_sheet.login()
 			status = find_channel_status(message.channel)
 			if status["schedule"] == True:
 				if status["mems"][message.author] == True:
@@ -241,6 +244,7 @@ async def on_message(message):
 			await client.send_message(message.channel, "Who are you talking to bro?")
 
 		if m == (settings["prefix"] + "reset_credit"):
+			client_sheet.login()
 			ws = get_worksheet(sheet, message.channel.server.name, client, message.channel.server.members)
 		
 			reset_credit(client, ws, message.channel.server.members)
@@ -248,32 +252,40 @@ async def on_message(message):
 			await client.send_message(message.channel, "Everyone's credit has been reset back to 1000")
 
 		if m.startswith(settings["prefix"] + "add_credit"):
+			client_sheet.login()
 			dmsg = m[len(settings["prefix"] + "add_credit"):].strip()
 			splits = dmsg.split(" ")
-			if not splits or len(splits) < 2:
+			if not splits or len(splits) < 3:
 				return await send_help_text(client, message.channel, "add_credit")
 			addee = splits[0]
 			amount = splits[1]
+			if not amount.isnumeric():
+				return await send_help_text(client, message.channel, "add_credit")
+			reason = splits[2]
 			ws = get_worksheet(sheet, message.channel.server.name, client, message.channel.server.members)
 			try:
 				cell = ws.find(addee)
 				ws.update_cell(cell.row, 3, str(int(ws.cell(cell.row, 3).value) + int(amount)))
-				await client.send_message(message.channel, addee + " has been awarded " + amount + " points by the ultimate leader " + message.author.name + " for exceptional bravery")
+				await client.send_message(message.channel, addee + " has been awarded " + amount + " points by the ultimate leader " + message.author.name + " for " + reason)
 			except gspread.exceptions.CellNotFound:
 				await client.send_message(message.channel, "Member not found")
 			
 		if m.startswith(settings["prefix"] + "minus_credit"):
+			client_sheet.login()
 			dmsg = m[len(settings["prefix"] + "minus_credit"):].strip()
 			splits = dmsg.split(" ")
-			if not splits or len(splits) < 2:
+			if not splits or len(splits) < 3:
 				return await send_help_text(client, message.channel, "minus_credit")
 			addee = splits[0]
 			amount = splits[1]
+			if not amount.isnumeric():
+				return await send_help_text(client, message.channel, "add_credit")
+			reason = splits[2]
 			ws = get_worksheet(sheet, message.channel.server.name, client, message.channel.server.members)
 			try:
 				cell = ws.find(addee)
 				ws.update_cell(cell.row, 3, str(int(ws.cell(cell.row, 3).value) - int(amount)))
-				await client.send_message(message.channel, addee + " has been punished for " + amount + " points by the ultimate leader " + message.author.name + " for being a pussy")
+				await client.send_message(message.channel, addee + " has been punished for " + amount + " points by the ultimate leader " + message.author.name + " for " + reason)
 			except gspread.exceptions.CellNotFound:
 				await client.send_message(message.channel, "Member not found")
 			
@@ -282,6 +294,7 @@ async def on_message(message):
 
 
 		if m.startswith(settings["prefix"] + "schedule"):
+			client_sheet.login()
 			status = find_channel_status(message.channel)
 			if status == None:
 				status = {}
