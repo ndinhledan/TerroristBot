@@ -261,12 +261,12 @@ async def on_message(message):
 			amount = splits[1]
 			if not amount.isnumeric():
 				return await send_help_text(client, message.channel, "add_credit")
-			reason = splits[2]
+			reasons = ' '.join(str(reason) for reason in splits[2::]) 
 			ws = get_worksheet(sheet, message.channel.server.name, client, message.channel.server.members)
 			try:
 				cell = ws.find(addee)
 				ws.update_cell(cell.row, 3, str(int(ws.cell(cell.row, 3).value) + int(amount)))
-				await client.send_message(message.channel, addee + " has been awarded " + amount + " points by the ultimate leader " + message.author.name + " for " + reason)
+				await client.send_message(message.channel, addee + " has been awarded " + amount + " points by the ultimate leader " + message.author.name + " for " + reasons)
 			except gspread.exceptions.CellNotFound:
 				await client.send_message(message.channel, "Member not found")
 			
@@ -280,12 +280,12 @@ async def on_message(message):
 			amount = splits[1]
 			if not amount.isnumeric():
 				return await send_help_text(client, message.channel, "add_credit")
-			reason = splits[2]
+			reasons = ' '.join(str(reason) for reason in splits[2::]) 
 			ws = get_worksheet(sheet, message.channel.server.name, client, message.channel.server.members)
 			try:
 				cell = ws.find(addee)
 				ws.update_cell(cell.row, 3, str(int(ws.cell(cell.row, 3).value) - int(amount)))
-				await client.send_message(message.channel, addee + " has been punished for " + amount + " points by the ultimate leader " + message.author.name + " for " + reason)
+				await client.send_message(message.channel, addee + " has been punished " + amount + " points by the ultimate leader " + message.author.name + " for " + reasons)
 			except gspread.exceptions.CellNotFound:
 				await client.send_message(message.channel, "Member not found")
 			
