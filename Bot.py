@@ -253,17 +253,26 @@ async def on_message(message):
 
 		if m.startswith(settings["prefix"] + "credit"):
 			client_sheet.login()
-			dmsg = m[len(settings["prefix"] + "credit"):].strip()
-			splits = dmsg.split(" ")
-			if not splits or len(splits) != 1:
-				return await send_help_text(client, message.channel, "credit")
-			name = splits[0]
 			ws = get_worksheet(sheet, message.channel.server.name, client, message.channel.server.members)
-			try:
-				cell = ws.find(name)
-				await client.send_message(message.channel, "``" + name + "   ----------   " + ws.cell(cell.row, 3).value + "``")
-			except gspread.exceptions.CellNotFound:
-				await client.send_message(message.channel, name + " does not exist")
+			name = m[len(settings["prefix"] + "credit"):].strip()
+			if not name:
+				credits = '```'
+				row = 2
+				cell_name = ws.cell(row,1)
+				cell_score = ws.cell(row, 3)
+				while cell_name.value:
+					credits += (cell_name.value + '   -----------   ' + cell_score.value + '\n')
+					row += 1
+					cell_name = ws.cell(row,1)
+					cell_score = ws.cell(row, 3)
+				credits += '```'
+				await client.send_message(message.channel, credits)
+			else:
+				try:
+					cell = ws.find(name)
+					await client.send_message(message.channel, "``" + name + "   ----------   " + ws.cell(cell.row, 3).value + "``")
+				except gspread.exceptions.CellNotFound:
+					await client.send_message(message.channel, name + " does not exist")
 
 		if m.startswith(settings["prefix"] + "add_credit"):
 			client_sheet.login()
