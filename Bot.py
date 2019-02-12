@@ -91,6 +91,7 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
+	
 	if message.author == client.user:
 		return
 	else:
@@ -148,6 +149,14 @@ async def on_message(message):
 				
 			if status["schedule"] == True: #ready early    
 				if status["mems"][message.author] == False:
+					if (message.author.voice_channel == None):
+						ws = get_worksheet(sheet, message.channel.server.name, client, message.channel.server.members)
+						try:
+							cell = ws.find(message.author.name)
+							ws.update_cell(cell.row, 3, str(int(ws.cell(cell.row, 3).value) - 10))
+						except gspread.exceptions.CellNotFound:
+							print("cannot find")	
+						return await client.send_message(message.channel, message.author.name + " don't be a smartass you fuck here's minus 10 points for you")
 					status["mems"][message.author] = True
 					await client.send_message(message.channel, "{0.mention} has finished getting high on laughing gas.".format(message.author) ,embed=create_em_list_sol(status["mems"]))
 					if score == 1000:
@@ -307,13 +316,7 @@ async def on_message(message):
 			if not amount.isnumeric():
 				return await send_help_text(client, message.channel, "add_credit")
 			reasons = ' '.join(str(reason) for reason in splits[2::]) 
-			ws = get_worksheet(sheet, message.channel.server.name, client, message.channel.server.members)
-			try:
-				cell = ws.find(addee)
-				ws.update_cell(cell.row, 3, str(int(ws.cell(cell.row, 3).value) - int(amount)))
-				await client.send_message(message.channel, addee + " has been punished " + amount + " points by the ultimate leader " + message.author.name + " for " + reasons)
-			except gspread.exceptions.CellNotFound:
-				await client.send_message(message.channel, "Member not found")
+			
 			
 
 		# GAME SCHEDULER
